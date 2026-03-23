@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}发布文章{% endblock %}
+{% block content %}
+<div class="table-wrap">
+    <h2>发布新文章</h2>
+    <form method="post" id="article-form">
+        {% csrf_token %}
+        <div class="field">
+            <label>{{ form.project.label }}</label>
+            {{ form.project }}
+        </div>
+        <div class="field">
+            <label>{{ form.title.label }}</label>
+            {{ form.title }}
+        </div>
+        <div class="field">
+            <label>{{ form.summary.label }}</label>
+            {{ form.summary }}
+        </div>
+        <div class="field">
+            <label>{{ form.content_format.label }}</label>
+            {{ form.content_format }}
+        </div>
+        <div id="markdown-panel">
+            <div class="field">
+                <label>{{ form.content.label }}</label>
+                {{ form.content }}
+            </div>
+        </div>
+        <div id="richtext-panel" style="display:none;">
+            <label>富文本编辑器</label>
+            <div class="editor-toolbar">
+                <button class="button" type="button" data-cmd="bold">加粗</button>
+                <button class="button" type="button" data-cmd="italic">斜体</button>
+                <button class="button" type="button" data-cmd="insertUnorderedList">列表</button>
+                <button class="button" type="button" data-cmd="formatBlock" data-value="h2">标题</button>
+                <button class="button" type="button" data-cmd="createLink">链接</button>
+            </div>
+            <div id="rich-editor" class="rich-editor" contenteditable="true"></div>
+            {{ form.rich_content }}
+        </div>
+        <div class="field">
+            <label>{{ form.is_published.label }}</label>
+            {{ form.is_published }}
+        </div>
+        <button class="button" type="submit">发布文章</button>
+    </form>
+</div>
+<script>
+    const formatSelect = document.getElementById("id_content_format");
+    const markdownPanel = document.getElementById("markdown-panel");
+    const richPanel = document.getElementById("richtext-panel");
+    const richEditor = document.getElementById("rich-editor");
+    const richContentInput = document.getElementById("id_rich_content");
+    const markdownInput = document.getElementById("id_content");
+
+    function syncEditorMode() {
+        const isRich = formatSelect.value === "RICHTEXT";
+        markdownPanel.style.display = isRich ? "none" : "block";
+        richPanel.style.display = isRich ? "block" : "none";
+        if (isRich && markdownInput.value && !richEditor.innerHTML.trim()) {
+            richEditor.innerHTML = markdownInput.value;
+        }
+    }
+
+    formatSelect.addEventListener("change", syncEditorMode);
+    document.querySelectorAll("[data-cmd]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const cmd = button.dataset.cmd;
+            const value = button.dataset.value || (cmd === "createLink" ? prompt("输入链接地址") : null);
+            if (value === null && cmd === "createLink") return;
+            document.execCommand(cmd, false, value);
+            richEditor.focus();
+        });
+    });
+    document.getElementById("article-form").addEventListener("submit", () => {
+        richContentInput.value = richEditor.innerHTML;
+    });
+    syncEditorMode();
+</script>
+{% endblock %}

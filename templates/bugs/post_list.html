@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}历史 Bug 社区{% endblock %}
+{% block content %}
+<div class="list-wrap">
+    <h2>历史 Bug 社区</h2>
+    <ul class="clean">
+        {% for post in posts %}
+        <li>
+            <strong>{{ post.title }}</strong>
+            <div class="meta">
+                {{ post.project|default:"通用" }} · {{ post.author|default:"匿名" }} ·
+                {% if post.is_pinned %}置顶 · {% endif %}
+                热度 {{ post.heat }} · 评论 {{ post.comments.count }}
+            </div>
+            <div class="meta">{{ post.content|truncatechars:160 }}</div>
+        </li>
+        {% empty %}
+        <li>暂无历史 Bug 帖子</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}异步任务{% endblock %}
+{% block content %}
+<div class="list-wrap" style="margin-bottom: 20px;">
+    <h2>CI 集成</h2>
+    <ul class="clean">
+        {% for integration in integrations %}
+        <li>
+            <strong>{{ integration.name }}</strong>
+            <div class="meta">
+                {{ integration.project.name }} · {{ integration.get_provider_display }} ·
+                触发地址 <code>/tasks/trigger/{{ integration.id }}/</code>
+            </div>
+        </li>
+        {% empty %}
+        <li>暂无可用 CI 集成</li>
+        {% endfor %}
+    </ul>
+</div>
+<div class="table-wrap">
+    <h2>异步任务执行</h2>
+    <table>
+        <thead><tr><th>标题</th><th>项目</th><th>CI 集成</th><th>类型</th><th>来源</th><th>状态</th><th>进度</th><th>操作</th><th>外部任务</th><th>回调令牌</th></tr></thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{{ task.project|default:"-" }}</td>
+                <td>{{ task.integration|default:"-" }}</td>
+                <td>{{ task.get_task_type_display }}</td>
+                <td>{{ task.get_source_display }}</td>
+                <td>{{ task.get_status_display }}</td>
+                <td>{{ task.progress }}%</td>
+                <td>
+                    <form method="post" action="{% url 'async_tasks:task-action' task.id %}">
+                        {% csrf_token %}
+                        {% if task.status == "RUNNING" or task.status == "QUEUED" %}
+                        <button class="button" type="submit" name="action" value="pause">暂停</button>
+                        {% elif task.status == "FAILED" %}
+                        <button class="button" type="submit" name="action" value="retry">重试</button>
+                        {% elif task.status == "PENDING" or task.status == "PAUSED" %}
+                        <button class="button" type="submit" name="action" value="start">开始</button>
+                        {% else %}
+                        <span class="meta">无操作</span>
+                        {% endif %}
+                    </form>
+                </td>
+                <td>{{ task.external_job_name|default:"-" }}</td>
+                <td><code>{{ task.callback_token }}</code></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="10">暂无异步任务</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

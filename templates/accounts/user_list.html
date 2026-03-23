@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}用户管理{% endblock %}
+{% block content %}
+<div class="table-wrap">
+    <h2>用户列表</h2>
+    <table>
+        <thead><tr><th>用户名</th><th>显示名</th><th>角色</th><th>邮箱</th><th>岗位</th></tr></thead>
+        <tbody>
+            {% for user in users %}
+            <tr><td>{{ user.username }}</td><td>{{ user.display_name }}</td><td>{{ user.get_role_display }}</td><td>{{ user.email }}</td><td>{{ user.title }}</td></tr>
+            {% empty %}
+            <tr><td colspan="5">暂无用户</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

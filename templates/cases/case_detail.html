@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ case.name }}{% endblock %}
+{% block content %}
+<div class="table-wrap">
+    <h2>{{ case.case_id }} - {{ case.name }}</h2>
+    <div class="meta">{{ case.project.name }} · {{ case.get_case_type_display }} · {{ case.get_source_display }}</div>
+    <table>
+        <tbody>
+            <tr><th>负责人</th><td>{{ case.owner|default:"-" }}</td></tr>
+            <tr><th>优先级</th><td>{{ case.priority }}</td></tr>
+            <tr><th>执行环境</th><td>{{ case.execution_env|default:"-" }}</td></tr>
+            <tr><th>关联仓库</th><td>{{ case.repo_url|default:"-" }}</td></tr>
+            <tr><th>Pytest 节点</th><td>{{ case.pytest_node|default:"-" }}</td></tr>
+            <tr><th>状态</th><td>{% if case.is_active %}启用{% else %}禁用{% endif %}</td></tr>
+            <tr><th>用例描述</th><td>{{ case.description|linebreaksbr|default:"-" }}</td></tr>
+            <tr><th>预期结果</th><td>{{ case.expected_result|linebreaksbr|default:"-" }}</td></tr>
+            <tr><th>前置条件</th><td>{{ case.precondition|linebreaksbr|default:"-" }}</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="list-wrap" style="margin-top:20px;">
+    <h2>用例附件</h2>
+    <ul class="clean">
+        {% for attachment in case.attachments.all %}
+        <li>
+            <strong>{{ attachment.title }}</strong>
+            <div class="meta">{{ attachment.get_source_display }} · {{ attachment.uploaded_by|default:"-" }} · {{ attachment.uploaded_at|date:"Y-m-d H:i" }}</div>
+            <div><a href="{{ attachment.file.url }}" target="_blank">打开附件</a></div>
+        </li>
+        {% empty %}
+        <li>暂无用例附件</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

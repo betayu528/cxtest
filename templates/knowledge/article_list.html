@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}知识沉淀{% endblock %}
+{% block content %}
+<div class="hero" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
+    <div>
+        <h2 style="margin-bottom:8px;">知识文章</h2>
+        <p class="meta" style="margin:0;">可以浏览、发布文章，并在详情页完成评论、点赞、收藏和分享。</p>
+    </div>
+    <a class="button" href="{% url 'knowledge:article-create' %}" style="background:#14532d; color:#fff; border-color:#14532d;">+ 新增文章</a>
+</div>
+<div class="grid">
+    <div class="list-wrap">
+        <h2>文章列表</h2>
+        <ul class="clean">
+            {% for article in articles %}
+            <li>
+                <a href="{% url 'knowledge:article-detail' article.id %}"><strong>{{ article.title }}</strong></a>
+                <div class="meta">
+                    {{ article.author|default:"匿名" }} · 热度 {{ article.heat }} · 评论 {{ article.comment_count }} · 点赞 {{ article.likes.count }} · 收藏 {{ article.favorites.count }}
+                    {% if article.is_recommended %} · 管理员推荐{% endif %}
+                </div>
+                <div class="meta">
+                    {% if article.summary %}
+                    {{ article.summary }}
+                    {% else %}
+                    {{ article.content|truncatechars:160 }}
+                    {% endif %}
+                </div>
+            </li>
+            {% empty %}
+            <li>暂无文章</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="list-wrap">
+        <h2>右侧推荐</h2>
+        <ul class="clean">
+            {% for article in articles|slice:":5" %}
+            <li>
+                <a href="{% url 'knowledge:article-detail' article.id %}"><strong>{{ article.title }}</strong></a>
+                <div class="meta">{% if article.is_recommended %}管理员推荐 · {% endif %}热度 {{ article.heat }}</div>
+            </li>
+            {% empty %}
+            <li>暂无推荐内容</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

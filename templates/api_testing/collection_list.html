@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block title %}API 协议测试{% endblock %}
+{% block content %}
+<style>
+    .api-layout {
+        display: grid;
+        grid-template-columns: 1.25fr 0.75fr;
+        gap: 20px;
+        align-items: start;
+    }
+    .api-form-grid {
+        display: grid;
+        grid-template-columns: 120px 120px 1fr;
+        gap: 12px;
+        align-items: end;
+    }
+    .api-form-grid .field {
+        margin-bottom: 12px;
+    }
+    .api-form-grid .field label,
+    .api-stack .field label {
+        margin-bottom: 6px;
+        font-size: 13px;
+    }
+    .api-form-grid .field input,
+    .api-form-grid .field select,
+    .api-stack .field input,
+    .api-stack .field select,
+    .api-stack .field textarea {
+        padding: 10px 12px;
+        border-radius: 12px;
+    }
+    .api-stack .field {
+        margin-bottom: 12px;
+    }
+    .api-result-meta {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .api-result-card {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #fbfdff;
+    }
+    .api-result-card .meta {
+        margin-top: 4px;
+    }
+    .api-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .api-tab {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #fff;
+        cursor: pointer;
+    }
+    .api-tab.active {
+        background: #14532d;
+        color: #fff;
+        border-color: #14532d;
+    }
+    .api-panel {
+        display: none;
+    }
+    .api-panel.active {
+        display: block;
+    }
+    .api-output {
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        padding: 16px;
+        margin: 0;
+        border-radius: 16px;
+        background: #0f172a;
+        color: #e2e8f0;
+        border: 1px solid #1e293b;
+        max-width: 100%;
+        max-height: 320px;
+        overflow: auto;
+    }
+    @media (max-width: 960px) {
+        .api-layout,
+        .api-form-grid,
+        .api-result-meta {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+<div class="api-layout">
+    <div>
+        <div class="table-wrap">
+            <h2>协议测试台</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="api-form-grid">
+                    <div class="field">
+                        <label>{{ form.project.label }}</label>
+                        {{ form.project }}
+                        {% if form.project.errors %}<div class="meta">{{ form.project.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="field">
+                        <label>{{ form.protocol.label }}</label>
+                        {{ form.protocol }}
+                        {% if form.protocol.errors %}<div class="meta">{{ form.protocol.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="field">
+                        <label>{{ form.target.label }}</label>
+                        {{ form.target }}
+                        {% if form.target.errors %}<div class="meta">{{ form.target.errors|join:", " }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="api-stack">
+                    <div class="field">
+                        <label>{{ form.name.label }}</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<div class="meta">{{ form.name.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="field" id="method-field">
+                        <label>{{ form.method.label }}</label>
+                        {{ form.method }}
+                        {% if form.method.errors %}<div class="meta">{{ form.method.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="field" id="headers-field">
+                        <label>{{ form.headers.label }}</label>
+                        {{ form.headers }}
+                        {% if form.headers.errors %}<div class="meta">{{ form.headers.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="field">
+                        <label>{{ form.request_payload.label }}</label>
+                        {{ form.request_payload }}
+                        {% if form.request_payload.errors %}<div class="meta">{{ form.request_payload.errors|join:", " }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="meta">HTTP/HTTPS 请求会自动注入平台内部鉴权头，用户无需手工填写。</div>
+                <button class="button" type="submit">执行协议测试</button>
+            </form>
+        </div>
+
+        {% if latest_result %}
+        <div class="table-wrap" style="margin-top:20px;">
+            <h2>执行结果</h2>
+            <div class="api-result-meta">
+                <div class="api-result-card">
+                    <strong>协议</strong>
+                    <div class="meta">{{ latest_result.protocol }}</div>
+                </div>
+                <div class="api-result-card">
+                    <strong>状态</strong>
+                    <div class="meta">{{ latest_result.response_status|default:"-" }}</div>
+                </div>
+                <div class="api-result-card">
+                    <strong>耗时</strong>
+                    <div class="meta">{{ latest_result.duration_ms }} ms</div>
+                </div>
+                <div class="api-result-card">
+                    <strong>结果</strong>
+                    <div class="meta">{% if latest_result.is_success %}<span class="tag">成功</span>{% else %}<span class="tag warn">失败</span>{% endif %}</div>
+                </div>
+            </div>
+            <div class="field">
+                <label>平台自动注入请求头</label>
+                <pre class="api-output">{{ latest_result.headers }}</pre>
+            </div>
+            <div class="api-tabs">
+                <button class="api-tab active" type="button" data-tab="response-headers">响应头</button>
+                <button class="api-tab" type="button" data-tab="response-body">响应消息体</button>
+            </div>
+            <div id="response-headers" class="api-panel active">
+                <pre class="api-output">{{ latest_result.response_headers|default:"-" }}</pre>
+            </div>
+            <div id="response-body" class="api-panel">
+                <div class="field">
+                    <label>文本回包</label>
+                    <pre class="api-output">{{ latest_result.response_text|default:"-" }}</pre>
+                </div>
+                <div class="field">
+                    <label>十六进制回包</label>
+                    <pre class="api-output">{{ latest_result.response_hex|default:"-" }}</pre>
+                </div>
+                <div class="field">
+                    <label>错误信息</label>
+                    <pre class="api-output">{{ latest_result.error_message|default:"-" }}</pre>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div>
+        <div class="list-wrap">
+            <h2>最近协议测试</h2>
+            <ul class="clean">
+                {% for record in records %}
+                <li>
+                    <strong>{{ record.name }}</strong>
+                    <div class="meta">{{ record.protocol }} · {{ record.target }} · {{ record.duration_ms }} ms</div>
+                    <div class="meta">
+                        {% if record.is_success %}<span class="tag">成功</span>{% else %}<span class="tag warn">失败</span>{% endif %}
+                        {% if record.protocol == "TCP" and record.response_hex %} · 支持十六进制查看{% endif %}
+                    </div>
+                </li>
+                {% empty %}
+                <li>暂无执行记录</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="table-wrap" style="margin-top:20px;">
+            <h2>API 集合</h2>
+            <table>
+                <thead><tr><th>名称</th><th>项目</th><th>来源</th><th>创建时间</th></tr></thead>
+                <tbody>
+                    {% for collection in collections %}
+                    <tr>
+                        <td>{{ collection.name }}</td>
+                        <td>{{ collection.project.name }}</td>
+                        <td>{{ collection.source }}</td>
+                        <td>{{ collection.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4">暂无 API 集合</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    const protocolField = document.getElementById("id_protocol");
+    const methodField = document.getElementById("method-field");
+    const headersField = document.getElementById("headers-field");
+    function syncProtocolFields() {
+        const protocol = document.getElementById("id_protocol").value;
+        methodField.style.display = protocol === "HTTP" ? "block" : "none";
+        headersField.style.display = protocol === "HTTP" || protocol === "WEBSOCKET" ? "block" : "none";
+    }
+    if (protocolField) {
+        protocolField.addEventListener("change", syncProtocolFields);
+        syncProtocolFields();
+    }
+    document.querySelectorAll(".api-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+            document.querySelectorAll(".api-tab").forEach((item) => item.classList.remove("active"));
+            document.querySelectorAll(".api-panel").forEach((item) => item.classList.remove("active"));
+            tab.classList.add("active");
+            document.getElementById(tab.dataset.tab).classList.add("active");
+        });
+    });
+</script>
+{% endblock %}

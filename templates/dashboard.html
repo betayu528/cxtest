@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}平台总览{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h2>平台总览</h2>
+    <p>当前首页已切换为淡蓝色工作台风格，顶部聚焦首页、项目与知识社区，左侧集中放测试模块入口。</p>
+</section>
+
+<section class="cards">
+    <div class="card"><div class="label">项目数</div><div class="value">{{ project_count }}</div></div>
+    <div class="card"><div class="label">测试用例数</div><div class="value">{{ case_count }}</div></div>
+    <div class="card"><div class="label">API 集合数</div><div class="value">{{ api_collection_count }}</div></div>
+    <div class="card"><div class="label">异步任务数</div><div class="value">{{ task_count }}</div></div>
+    <div class="card"><div class="label">Bug 帖子数</div><div class="value">{{ bug_count }}</div></div>
+    <div class="card"><div class="label">知识文章数</div><div class="value">{{ article_count }}</div></div>
+    <div class="card"><div class="label">通知数</div><div class="value">{{ notification_count }}</div></div>
+</section>
+
+<section class="grid">
+    <div class="list-wrap">
+        <h2>最近任务</h2>
+        <ul class="clean">
+            {% for task in latest_tasks %}
+            <li>
+                <strong>{{ task.title }}</strong>
+                <div class="meta">{{ task.project|default:"未绑定项目" }} · {{ task.get_status_display }} · {{ task.created_at|date:"Y-m-d H:i" }}</div>
+            </li>
+            {% empty %}
+            <li>暂无任务记录</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="list-wrap">
+        <h2>热门历史 Bug</h2>
+        <ul class="clean">
+            {% for post in hot_bugs %}
+            <li>
+                <strong>{{ post.title }}</strong>
+                <div class="meta">{% if post.is_pinned %}置顶 · {% endif %}热度 {{ post.heat }} · {{ post.updated_at|date:"Y-m-d H:i" }}</div>
+            </li>
+            {% empty %}
+            <li>暂无帖子</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="list-wrap">
+        <h2>推荐文章</h2>
+        <ul class="clean">
+            {% for article in recommended_articles %}
+            <li>
+                <strong>{{ article.title }}</strong>
+                <div class="meta">{% if article.is_recommended %}管理员推荐 · {% endif %}热度 {{ article.heat }} · {{ article.published_at|date:"Y-m-d H:i" }}</div>
+            </li>
+            {% empty %}
+            <li>暂无文章</li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}测试数据{% endblock %}
+{% block content %}
+<div class="table-wrap">
+    <h2>测试数据集</h2>
+    <table>
+        <thead><tr><th>名称</th><th>项目</th><th>描述</th><th>标签</th><th>创建人</th><th>创建时间</th></tr></thead>
+        <tbody>
+            {% for dataset in datasets %}
+            <tr>
+                <td>{{ dataset.name }}</td>
+                <td>{{ dataset.project.name }}</td>
+                <td>{{ dataset.description|default:"-" }}</td>
+                <td>{{ dataset.tags|join:", " }}</td>
+                <td>{{ dataset.created_by|default:"-" }}</td>
+                <td>{{ dataset.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">暂无测试数据</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

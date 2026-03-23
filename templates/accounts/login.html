@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}用户登录{% endblock %}
+{% block content %}
+<div class="table-wrap" style="max-width: 520px; margin: 40px auto;">
+    <h2>登录平台</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="field">
+            <label>{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<div class="meta">{{ field.errors|join:", " }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <button class="button" type="submit">登录</button>
+    </form>
+</div>
+{% endblock %}

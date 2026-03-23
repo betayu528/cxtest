@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}测试用例工作台{% endblock %}
+{% block content %}
+<div class="grid" style="grid-template-columns: 320px 1fr; align-items:start;">
+    <div class="list-wrap">
+        <h2>项目树</h2>
+        <ul class="clean">
+            {% for root in root_projects %}
+            <li>
+                <strong><a href="{% url 'cases:case-list' %}?project={{ root.id }}">{{ root.name }}</a></strong>
+                <div class="meta">{{ root.code }}</div>
+                {% if root.children.all %}
+                <ul class="clean" style="padding-left: 18px; margin-top: 8px;">
+                    {% for child in root.children.all %}
+                    <li style="padding:8px 0;">
+                        <a href="{% url 'cases:case-list' %}?project={{ child.id }}">{{ child.name }}</a>
+                        <div class="meta">{{ child.code }}</div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <form method="post" action="{% url 'cases:subproject-create' root.id %}" style="margin-top: 12px;">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label>新增子项目</label>
+                        <input type="text" name="name" placeholder="子项目名称" required>
+                    </div>
+                    <div class="field">
+                        <label>子项目编码</label>
+                        <input type="text" name="code" placeholder="例如 CASE-SUB-01" required>
+                    </div>
+                    <div class="field">
+                        <label>描述</label>
+                        <textarea name="description" rows="2"></textarea>
+                    </div>
+                    <button class="button" type="submit">新增子项目</button>
+                </form>
+            </li>
+            {% empty %}
+            <li>暂无项目，请先在项目模块创建项目。</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div>
+        <div class="hero">
+            <h2>{% if selected_project %}{{ selected_project.name }}{% else %}请选择左侧项目{% endif %}</h2>
+            <p class="meta" style="margin-bottom:0;">
+                {% if selected_project %}
+                当前正在管理子项目下的测试用例、PDF/Excel/XMind 文件和批量导出。
+                {% else %}
+                从左侧选择一个项目或子项目后开始操作。
+                {% endif %}
+            </p>
+        </div>
+
+        {% if selected_project %}
+        <div class="grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="table-wrap">
+                <h2>新增测试用例</h2>
+                <form method="post" action="{% url 'cases:case-create' selected_project.id %}">
+                    {% csrf_token %}
+                    {% for field in case_form %}
+                    <div class="field">
+                        <label>{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                    {% endfor %}
+                    <button class="button" type="submit">新增用例</button>
+                </form>
+            </div>
+            <div class="table-wrap">
+                <h2>上传子项目文件</h2>
+                <form method="post" action="{% url 'cases:document-upload' selected_project.id %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% for field in document_form %}
+                    <div class="field">
+                        <label>{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                    {% endfor %}
+                    <button class="button" type="submit">上传文件</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                <h2>子项目文件</h2>
+            </div>
+            <table>
+                <thead><tr><th>标题</th><th>类型</th><th>上传人</th><th>时间</th><th>查看</th></tr></thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td>{{ doc.title }}</td>
+                        <td>{{ doc.get_source_display }}</td>
+                        <td>{{ doc.uploaded_by|default:"-" }}</td>
+                        <td>{{ doc.uploaded_at|date:"Y-m-d H:i" }}</td>
+                        <td><a href="{{ doc.file.url }}" target="_blank">打开</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">暂无上传文件</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-wrap" style="margin-top:20px;">
+            <form method="post" action="{% url 'cases:case-export' selected_project.id %}">
+                {% csrf_token %}
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <h2>测试用例</h2>
+                    <div style="display:flex; gap:10px;">
+                        <button class="button" type="button" onclick="toggleAllCases(true)">全选</button>
+                        <button class="button" type="button" onclick="toggleAllCases(false)">清空</button>
+                        <button class="button" type="submit">导出所选用例</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th></th><th>用例 ID</th><th>名称</th><th>负责人</th><th>优先级</th><th>状态</th><th>详情</th><th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in cases %}
+                        <tr>
+                            <td><input type="checkbox" name="case_ids" value="{{ case.id }}"></td>
+                            <td>{{ case.case_id }}</td>
+                            <td>{{ case.name }}</td>
+                            <td>{{ case.owner|default:"-" }}</td>
+                            <td><span class="tag warn">{{ case.priority }}</span></td>
+                            <td>{% if case.is_active %}<span class="tag">启用</span>{% else %}<span class="tag gray">禁用</span>{% endif %}</td>
+                            <td><a href="{% url 'cases:case-detail' case.id %}">查看详情</a></td>
+                            <td>
+                                <form method="post" action="{% url 'cases:case-action' case.id %}" style="display:flex; gap:8px; flex-wrap:wrap;">
+                                    {% csrf_token %}
+                                    {% if case.is_active %}
+                                    <button class="button" type="submit" name="action" value="disable">禁用</button>
+                                    {% else %}
+                                    <button class="button" type="submit" name="action" value="enable">启用</button>
+                                    {% endif %}
+                                    <button class="button" type="submit" name="action" value="delete" onclick="return confirm('确认删除该用例？')">删除</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8">当前子项目下暂无测试用例</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<script>
+    function toggleAllCases(checked) {
+        document.querySelectorAll('input[name="case_ids"]').forEach((item) => {
+            item.checked = checked;
+        });
+    }
+</script>
+{% endblock %}

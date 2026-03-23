@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}个人资料{% endblock %}
+{% block content %}
+<div class="grid">
+    <div class="list-wrap">
+        <h2>个人信息</h2>
+        <div style="display:flex; gap:18px; align-items:center; margin-bottom: 20px;">
+            {% if request.user.avatar %}
+            <img class="avatar" src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" style="width:80px; height:80px;">
+            {% else %}
+            <span class="avatar" style="width:80px; height:80px; font-size:28px;">{{ request.user.display_name|default:request.user.username|slice:":1" }}</span>
+            {% endif %}
+            <div>
+                <div style="font-size: 24px; font-weight: 700;">{{ request.user.display_name|default:request.user.username }}</div>
+                <div class="meta">{{ request.user.get_role_display }} · {{ request.user.title|default:"未填写岗位" }}</div>
+            </div>
+        </div>
+        <div class="meta">用户名：{{ request.user.username }}</div>
+        <div class="meta">邮箱：{{ request.user.email|default:"未填写" }}</div>
+        <div class="meta">手机号：{{ request.user.mobile|default:"未填写" }}</div>
+        <div class="meta">简介：{{ request.user.bio|default:"这个人很低调，还没有写简介。" }}</div>
+    </div>
+    <div class="table-wrap">
+        <h2>编辑资料</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="field">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div class="meta">{{ field.errors|join:", " }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            <button class="button" type="submit">保存资料</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

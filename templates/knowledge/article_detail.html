@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load knowledge_extras %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<div class="table-wrap">
+    <h2>{{ article.title }}</h2>
+    <div class="meta">
+        {{ article.author|default:"匿名" }} · {{ article.published_at|date:"Y-m-d H:i" }} ·
+        热度 {{ article.heat }} · 评论 {{ article.comments.count }} · 点赞 {{ article.likes.count }} · 收藏 {{ article.favorites.count }} · 分享 {{ article.share_count }}
+    </div>
+    {% if article.summary %}
+    <div class="hero" style="margin-top:20px; margin-bottom:20px; padding:18px;">
+        <strong>摘要</strong>
+        <div class="meta">{{ article.summary }}</div>
+    </div>
+    {% endif %}
+    <div class="article-content">{{ article.content|render_article:article.content_format }}</div>
+
+    <div class="article-actions">
+        <form method="post" action="{% url 'knowledge:article-react' article.id 'like' %}">
+            {% csrf_token %}
+            <button class="button" type="submit">{% if liked %}取消点赞{% else %}点赞{% endif %}</button>
+        </form>
+        <form method="post" action="{% url 'knowledge:article-react' article.id 'favorite' %}">
+            {% csrf_token %}
+            <button class="button" type="submit">{% if favorited %}取消收藏{% else %}收藏{% endif %}</button>
+        </form>
+        <form method="post" action="{% url 'knowledge:article-react' article.id 'share' %}">
+            {% csrf_token %}
+            <button class="button" type="submit">分享</button>
+        </form>
+        <button class="button" type="button" onclick="navigator.clipboard.writeText(window.location.href)">复制链接</button>
+    </div>
+</div>
+
+<div class="list-wrap" style="margin-top: 24px;">
+    <h2>评论区</h2>
+    {% if request.user.is_authenticated %}
+    <form method="post" action="{% url 'knowledge:article-comment' article.id %}">
+        {% csrf_token %}
+        {% for field in comment_form %}
+        <div class="field">
+            <label>{{ field.label }}</label>
+            {{ field }}
+        </div>
+        {% endfor %}
+        <button class="button" type="submit">发表评论</button>
+    </form>
+    {% else %}
+    <div class="meta">登录后可发表评论、点赞和收藏。</div>
+    {% endif %}
+    <ul class="clean" style="margin-top: 18px;">
+        {% for comment in article.comments.all %}
+        <li>
+            <strong>{{ comment.author|default:"匿名用户" }}</strong>
+            <div class="meta">{{ comment.created_at|date:"Y-m-d H:i" }}</div>
+            <div>{{ comment.content|linebreaksbr }}</div>
+        </li>
+        {% empty %}
+        <li>还没有评论，来写第一条吧。</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

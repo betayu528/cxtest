@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Mock 服务{% endblock %}
+{% block content %}
+<div class="table-wrap">
+    <h2>协议 Mock</h2>
+    <table>
+        <thead><tr><th>服务名</th><th>项目</th><th>协议</th><th>监听</th><th>路由</th><th>运行配置</th><th>规则数</th><th>状态</th></tr></thead>
+        <tbody>
+            {% for service in services %}
+            <tr>
+                <td>{{ service.name }}</td>
+                <td>{{ service.project.name }}</td>
+                <td>{{ service.get_protocol_display }}</td>
+                <td>{{ service.host }}:{{ service.port }}</td>
+                <td>{{ service.route|default:"-" }}</td>
+                <td>{{ service.config|default:"-" }}</td>
+                <td>{{ service.rules.count }}</td>
+                <td>{% if service.is_enabled %}<span class="tag">启用</span>{% else %}<span class="tag gray">停用</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8">暂无 Mock 服务</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
